@@ -8,6 +8,7 @@ import (
 	"github.com/condrowiyono/living-rooms-api/app/handler"
 	"github.com/condrowiyono/living-rooms-api/app/model"
 	"github.com/condrowiyono/living-rooms-api/config"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 )
@@ -18,7 +19,7 @@ type App struct {
 	DB     *gorm.DB
 }
 
-// App initialize with predefined configuration
+// Initialize with predefined configuration
 func (a *App) Initialize(config *config.Config) {
 	dbURI := fmt.Sprintf("%s:%s@/%s?charset=%s&parseTime=True",
 		config.DB.Username,
@@ -39,41 +40,53 @@ func (a *App) Initialize(config *config.Config) {
 // Set all required routers
 func (a *App) setRouters() {
 	// Routing for handling the projects
-	a.Get("/healthz", a.HeathzCheck)
+	a.Get("/healthz", a.HealthzCheck)
 
 	a.Get("/sample-link", a.GetAllSampleLink)
 	a.Post("/sample-link", a.CreateSampleLink)
 	a.Get("/sample-link/{id}", a.GetSampleLink)
 	a.Put("/sample-link/{id}", a.UpdateSampleLink)
 	a.Delete("/sample-link/{id}", a.DeleteSampleLink)
+
+	a.Get("/show", a.GetAllShow)
+	a.Post("/show", a.CreateShow)
+	a.Get("/show/{id}", a.GetShow)
+	a.Put("/show/{id}", a.UpdateShow)
+	a.Delete("/show/{id}", a.DeleteShow)
+
+	a.Get("/playlist", a.GetAllPlaylist)
+	a.Post("/playlist", a.CreatePlaylist)
+	a.Get("/playlist/{id}", a.GetPlaylist)
+	a.Put("/playlist/{id}", a.UpdatePlaylist)
+	a.Delete("/playlist/{id}", a.DeletePlaylist)
 }
 
-// Wrap the router for GET method
+// Get : Wrap the router for GET method
 func (a *App) Get(path string, f func(w http.ResponseWriter, r *http.Request)) {
 	a.Router.HandleFunc(path, f).Methods("GET")
 }
 
-// Wrap the router for POST method
+// Post : Wrap the router for POST method
 func (a *App) Post(path string, f func(w http.ResponseWriter, r *http.Request)) {
 	a.Router.HandleFunc(path, f).Methods("POST")
 }
 
-// Wrap the router for PUT method
+// Put : Wrap the router for PUT method
 func (a *App) Put(path string, f func(w http.ResponseWriter, r *http.Request)) {
 	a.Router.HandleFunc(path, f).Methods("PUT")
 }
 
-// Wrap the router for DELETE method
+// Delete : Wrap the router for DELETE method
 func (a *App) Delete(path string, f func(w http.ResponseWriter, r *http.Request)) {
 	a.Router.HandleFunc(path, f).Methods("DELETE")
 }
 
-// Handler HealthzCheck
-func (a *App) HeathzCheck(w http.ResponseWriter, r *http.Request) {
+// HealthzCheck handler
+func (a *App) HealthzCheck(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Ok"))
 }
 
-// GetAllSampleLink get add Sample Link
+// GetAllSampleLink handler
 func (a *App) GetAllSampleLink(w http.ResponseWriter, r *http.Request) {
 	handler.GetAllSampleLink(a.DB, w, r)
 }
@@ -94,7 +107,52 @@ func (a *App) DeleteSampleLink(w http.ResponseWriter, r *http.Request) {
 	handler.DeleteSampleLink(a.DB, w, r)
 }
 
+// GetAllShow handler
+func (a *App) GetAllShow(w http.ResponseWriter, r *http.Request) {
+	handler.GetAllShow(a.DB, w, r)
+}
+
+func (a *App) CreateShow(w http.ResponseWriter, r *http.Request) {
+	handler.CreateShow(a.DB, w, r)
+}
+
+func (a *App) GetShow(w http.ResponseWriter, r *http.Request) {
+	handler.GetShow(a.DB, w, r)
+}
+
+func (a *App) UpdateShow(w http.ResponseWriter, r *http.Request) {
+	handler.UpdateShow(a.DB, w, r)
+}
+
+func (a *App) DeleteShow(w http.ResponseWriter, r *http.Request) {
+	handler.DeleteShow(a.DB, w, r)
+}
+
+func (a *App) GetAllPlaylist(w http.ResponseWriter, r *http.Request) {
+	handler.GetAllPlaylist(a.DB, w, r)
+}
+
+func (a *App) CreatePlaylist(w http.ResponseWriter, r *http.Request) {
+	handler.CreatePlaylist(a.DB, w, r)
+}
+
+func (a *App) GetPlaylist(w http.ResponseWriter, r *http.Request) {
+	handler.GetPlaylist(a.DB, w, r)
+}
+
+func (a *App) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
+	handler.UpdatePlaylist(a.DB, w, r)
+}
+
+func (a *App) DeletePlaylist(w http.ResponseWriter, r *http.Request) {
+	handler.DeletePlaylist(a.DB, w, r)
+}
+
 // Run the app on it's router
 func (a *App) Run(host string) {
-	log.Fatal(http.ListenAndServe(host, a.Router))
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+
+	log.Fatal(http.ListenAndServe(host, handlers.CORS(originsOk, headersOk, methodsOk)(a.Router)))
 }

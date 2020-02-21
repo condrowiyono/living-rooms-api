@@ -13,8 +13,47 @@ type SampleLink struct {
 	Link   string `json:"link"`
 }
 
+// Playlist will serve as struct model
+type Playlist struct {
+	gorm.Model
+	Name        string
+	Description string
+	Shows       []Show `gorm:"many2many:playlists_shows;"`
+}
+
+// Show will serve as struct model
+type Show struct {
+	gorm.Model
+	Actors     string
+	Awards     string
+	BoxOffice  string
+	Country    string
+	DVD        string
+	Director   string
+	Genre      string
+	Language   string
+	Plot       string `gorm:"type:text"`
+	Poster     string
+	Production string
+	Rated      string
+	Released   string
+	Response   string
+	Runtime    string
+	Title      string
+	Type       string
+	Website    string
+	Writer     string
+	Year       string
+	ImdbID     string `json:"imdbID"`
+	ImdbRating string `json:"imdbRating"`
+	ImdbVotes  string `json:"imdbVotes"`
+	Banner     string
+	Trailer    string
+	PlayerURL  string
+}
+
 // DBMigrate will create and migrate the tables, and then make the some relationships if necessary
 func DBMigrate(db *gorm.DB) *gorm.DB {
-	db.AutoMigrate(&SampleLink{})
+	db.AutoMigrate(&SampleLink{}, &Playlist{}, &Show{})
 	return db
 }
