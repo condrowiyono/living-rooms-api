@@ -5,6 +5,15 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql" //asas
 )
 
+// User will serve as struct model
+type User struct {
+	gorm.Model
+	Email    string `gorm:"unique;not null" json:"email"`
+	Username string `gorm:"unique;not null" json:"username"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
+}
+
 // SampleLink will serve as struct model
 type SampleLink struct {
 	gorm.Model
@@ -54,6 +63,11 @@ type Show struct {
 
 // DBMigrate will create and migrate the tables, and then make the some relationships if necessary
 func DBMigrate(db *gorm.DB) *gorm.DB {
-	db.AutoMigrate(&SampleLink{}, &Playlist{}, &Show{})
+	db.AutoMigrate(
+		&SampleLink{},
+		&Playlist{},
+		&Show{},
+		&User{},
+	)
 	return db
 }
