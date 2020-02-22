@@ -60,7 +60,8 @@ func (a *App) setRouters() {
 	a.Put("/playlist/{id}", a.UpdatePlaylist)
 	a.Delete("/playlist/{id}", a.DeletePlaylist)
 
-	a.GetWithAuth("/movie-detail", a.GetMovieDetail)
+	a.GetWithAuth("/tmdb/movie-detail", a.GetMovieDetail)
+	a.GetWithAuth("/tmdb/search-movie", a.GetSearchMovie)
 
 	a.Post("/login", a.Login)
 	a.Post("/register", a.Register)
@@ -138,6 +139,10 @@ func (a *App) GetMovieDetail(w http.ResponseWriter, r *http.Request) {
 	handler.GetMovieDetail(w, r)
 }
 
+func (a *App) GetSearchMovie(w http.ResponseWriter, r *http.Request) {
+	handler.SearchMovie(w, r)
+}
+
 func (a *App) Login(w http.ResponseWriter, r *http.Request) {
 	handler.Login(a.DB, w, r)
 }
@@ -157,7 +162,7 @@ func (a *App) Run(host string) {
 		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
 		AllowedHeaders: []string{"Authorization", "Content-Type"},
 		// Enable Debugging for testing, consider disabling in production
-		Debug: true,
+		// Debug: true,
 	})
 	handler := c.Handler(a.Router)
 	log.Fatal(http.ListenAndServe(host, handler))
