@@ -8,9 +8,9 @@ import (
 	"github.com/condrowiyono/living-rooms-api/app/handler"
 	"github.com/condrowiyono/living-rooms-api/app/model"
 	"github.com/condrowiyono/living-rooms-api/config"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	"github.com/rs/cors"
 )
 
 // App has router and db instances
@@ -59,26 +59,12 @@ func (a *App) setRouters() {
 	a.Get("/playlist/{id}", a.GetPlaylist)
 	a.Put("/playlist/{id}", a.UpdatePlaylist)
 	a.Delete("/playlist/{id}", a.DeletePlaylist)
-}
 
-// Get : Wrap the router for GET method
-func (a *App) Get(path string, f func(w http.ResponseWriter, r *http.Request)) {
-	a.Router.HandleFunc(path, f).Methods("GET")
-}
+	a.GetWithAuth("/movie-detail", a.GetMovieDetail)
 
-// Post : Wrap the router for POST method
-func (a *App) Post(path string, f func(w http.ResponseWriter, r *http.Request)) {
-	a.Router.HandleFunc(path, f).Methods("POST")
-}
-
-// Put : Wrap the router for PUT method
-func (a *App) Put(path string, f func(w http.ResponseWriter, r *http.Request)) {
-	a.Router.HandleFunc(path, f).Methods("PUT")
-}
-
-// Delete : Wrap the router for DELETE method
-func (a *App) Delete(path string, f func(w http.ResponseWriter, r *http.Request)) {
-	a.Router.HandleFunc(path, f).Methods("DELETE")
+	a.Post("/login", a.Login)
+	a.Post("/register", a.Register)
+	a.GetWithAuth("/me", a.GetMyDetail)
 }
 
 // HealthzCheck handler
@@ -148,11 +134,31 @@ func (a *App) DeletePlaylist(w http.ResponseWriter, r *http.Request) {
 	handler.DeletePlaylist(a.DB, w, r)
 }
 
+func (a *App) GetMovieDetail(w http.ResponseWriter, r *http.Request) {
+	handler.GetMovieDetail(w, r)
+}
+
+func (a *App) Login(w http.ResponseWriter, r *http.Request) {
+	handler.Login(a.DB, w, r)
+}
+
+func (a *App) Register(w http.ResponseWriter, r *http.Request) {
+	handler.Register(a.DB, w, r)
+}
+
+func (a *App) GetMyDetail(w http.ResponseWriter, r *http.Request) {
+	handler.GetMyDetail(a.DB, w, r)
+}
+
 // Run the app on it's router
 func (a *App) Run(host string) {
-	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
-	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
-
-	log.Fatal(http.ListenAndServe(host, handlers.CORS(originsOk, headersOk, methodsOk)(a.Router)))
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	})
+	handler := c.Handler(a.Router)
+	log.Fatal(http.ListenAndServe(host, handler))
 }
