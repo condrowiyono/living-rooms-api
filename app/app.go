@@ -63,6 +63,8 @@ func (a *App) setRouters() {
 	a.GetWithAuth("/tmdb/movie-detail", a.GetMovieDetail)
 	a.GetWithAuth("/tmdb/search-movie", a.GetSearchMovie)
 
+	a.GetWithAuth("/image/duckduckgo/image-search", a.GetDuckDuckGoImage)
+
 	a.Post("/login", a.Login)
 	a.Post("/register", a.Register)
 	a.GetWithAuth("/me", a.GetMyDetail)
@@ -153,6 +155,10 @@ func (a *App) Register(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) GetMyDetail(w http.ResponseWriter, r *http.Request) {
 	handler.GetMyDetail(a.DB, w, r)
+}
+
+func (a *App) GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {
+	handler.GetDuckDuckGoImage(w, r)
 }
 
 // Run the app on it's router

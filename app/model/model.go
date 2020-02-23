@@ -58,7 +58,7 @@ type Show struct {
 	ImdbVotes  string `json:"imdbVotes"`
 	Banner     string
 	Trailer    string
-	PlayerURL  string
+	PlayerURL  string `gorm:"type:text"`
 }
 
 // DBMigrate will create and migrate the tables, and then make the some relationships if necessary
