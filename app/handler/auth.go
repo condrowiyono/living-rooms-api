@@ -64,6 +64,7 @@ func Register(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		Email:    user.Email,
 		Username: user.Username,
 		Name:     user.Name,
+		Role:     user.Role,
 		Password: string(hashedPassword),
 	}
 

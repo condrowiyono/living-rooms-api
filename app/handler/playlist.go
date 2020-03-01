@@ -68,7 +68,7 @@ func GetPlaylist(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
 	playlist := getPlaylistOr404(db, id, w, r)
-	db.Model(&playlist).Association("Shows").Find(&playlist.Shows)
+	db.Model(&playlist).Association("Players").Find(&playlist.Players)
 	if playlist == nil {
 		return
 	}

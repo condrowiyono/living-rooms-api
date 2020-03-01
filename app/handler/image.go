@@ -10,7 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetAllShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func GetAllImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := r.URL.Query()
 
 	page := string(vars.Get("page"))
@@ -27,11 +27,11 @@ func GetAllShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
 	offsetInt := (pageInt - 1) * limitInt
 
-	show := []model.Show{}
+	image := []model.Image{}
 	query := db.Limit(limitInt)
 	query = query.Offset(offsetInt)
 
-	if err := query.Find(&show).Error; err != nil {
+	if err := query.Find(&image).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -39,85 +39,85 @@ func GetAllShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	// Count all data
 	var count int64
 	query = query.Offset(0)
-	query.Table("shows").Count(&count)
+	query.Table("images").Count(&count)
 
 	// Write Response
 	meta := Meta{limitInt, offsetInt, pageInt, count}
-	respondJSON(w, http.StatusOK, meta, show)
+	respondJSON(w, http.StatusOK, meta, image)
 }
 
-func CreateShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	show := model.Show{}
+func CreateImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	image := model.Image{}
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&show); err != nil {
+	if err := decoder.Decode(&image); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
 
-	if err := db.Save(&show).Error; err != nil {
+	if err := db.Save(&image).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(w, http.StatusCreated, nil, show)
+	respondJSON(w, http.StatusCreated, nil, image)
 }
 
-func GetShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func GetImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
-	show := getShowOr404(db, id, w, r)
-	if show == nil {
+	image := getImageOr404(db, id, w, r)
+	if image == nil {
 		return
 	}
-	respondJSON(w, http.StatusOK, nil, show)
+	respondJSON(w, http.StatusOK, nil, image)
 }
 
-func UpdateShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func UpdateImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
-	show := getShowOr404(db, id, w, r)
-	if show == nil {
+	image := getImageOr404(db, id, w, r)
+	if image == nil {
 		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&show); err != nil {
+	if err := decoder.Decode(&image); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
 
-	if err := db.Save(&show).Error; err != nil {
+	if err := db.Save(&image).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(w, http.StatusOK, nil, show)
+	respondJSON(w, http.StatusOK, nil, image)
 }
 
-func DeleteShow(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func DeleteImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
-	show := getShowOr404(db, id, w, r)
-	if show == nil {
+	image := getImageOr404(db, id, w, r)
+	if image == nil {
 		return
 	}
-	if err := db.Delete(&show).Error; err != nil {
+	if err := db.Delete(&image).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	respondJSON(w, http.StatusNoContent, nil, nil)
 }
 
-// getShowOr404 gets a instance if exists, or respond the 404 error otherwise
-func getShowOr404(db *gorm.DB, id int64, w http.ResponseWriter, r *http.Request) *model.Show {
-	show := model.Show{}
-	if err := db.First(&show, id).Error; err != nil {
+// getImageOr404 gets a instance if exists, or respond the 404 error otherwise
+func getImageOr404(db *gorm.DB, id int64, w http.ResponseWriter, r *http.Request) *model.Image {
+	image := model.Image{}
+	if err := db.First(&image, id).Error; err != nil {
 		respondError(w, http.StatusNotFound, err.Error())
 		return nil
 	}
-	return &show
+	return &image
 }

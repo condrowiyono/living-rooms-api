@@ -10,9 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var err error
-
-func GetAllSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func GetAllGenre(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := r.URL.Query()
 
 	page := string(vars.Get("page"))
@@ -29,11 +27,11 @@ func GetAllSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
 	offsetInt := (pageInt - 1) * limitInt
 
-	sampleLink := []model.SampleLink{}
+	genre := []model.Genre{}
 	query := db.Limit(limitInt)
 	query = query.Offset(offsetInt)
 
-	if err := query.Find(&sampleLink).Error; err != nil {
+	if err := query.Find(&genre).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -41,85 +39,85 @@ func GetAllSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	// Count all data
 	var count int64
 	query = query.Offset(0)
-	query.Table("sample_links").Count(&count)
+	query.Table("genres").Count(&count)
 
 	// Write Response
 	meta := Meta{limitInt, offsetInt, pageInt, count}
-	respondJSON(w, http.StatusOK, meta, sampleLink)
+	respondJSON(w, http.StatusOK, meta, genre)
 }
 
-func CreateSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
-	sampleLink := model.SampleLink{}
+func CreateGenre(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	genre := model.Genre{}
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&sampleLink); err != nil {
+	if err := decoder.Decode(&genre); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
 
-	if err := db.Save(&sampleLink).Error; err != nil {
+	if err := db.Save(&genre).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(w, http.StatusCreated, nil, sampleLink)
+	respondJSON(w, http.StatusCreated, nil, genre)
 }
 
-func GetSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func GetGenre(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
-	sampleLink := getSampleLinkOr404(db, id, w, r)
-	if sampleLink == nil {
+	genre := getGenreOr404(db, id, w, r)
+	if genre == nil {
 		return
 	}
-	respondJSON(w, http.StatusOK, nil, sampleLink)
+	respondJSON(w, http.StatusOK, nil, genre)
 }
 
-func UpdateSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func UpdateGenre(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
-	sampleLink := getSampleLinkOr404(db, id, w, r)
-	if sampleLink == nil {
+	genre := getGenreOr404(db, id, w, r)
+	if genre == nil {
 		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&sampleLink); err != nil {
+	if err := decoder.Decode(&genre); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
 
-	if err := db.Save(&sampleLink).Error; err != nil {
+	if err := db.Save(&genre).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(w, http.StatusOK, nil, sampleLink)
+	respondJSON(w, http.StatusOK, nil, genre)
 }
 
-func DeleteSampleLink(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+func DeleteGenre(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, _ := strconv.ParseInt(vars["id"], 10, 64)
-	sampleLink := getSampleLinkOr404(db, id, w, r)
-	if sampleLink == nil {
+	genre := getGenreOr404(db, id, w, r)
+	if genre == nil {
 		return
 	}
-	if err := db.Delete(&sampleLink).Error; err != nil {
+	if err := db.Delete(&genre).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	respondJSON(w, http.StatusNoContent, nil, nil)
 }
 
-// getSampleLinkOr404 gets a instance if exists, or respond the 404 error otherwise
-func getSampleLinkOr404(db *gorm.DB, id int64, w http.ResponseWriter, r *http.Request) *model.SampleLink {
-	sampleLink := model.SampleLink{}
-	if err := db.First(&sampleLink, id).Error; err != nil {
+// getGenreOr404 gets a instance if exists, or respond the 404 error otherwise
+func getGenreOr404(db *gorm.DB, id int64, w http.ResponseWriter, r *http.Request) *model.Genre {
+	genre := model.Genre{}
+	if err := db.First(&genre, id).Error; err != nil {
 		respondError(w, http.StatusNotFound, err.Error())
 		return nil
 	}
-	return &sampleLink
+	return &genre
 }

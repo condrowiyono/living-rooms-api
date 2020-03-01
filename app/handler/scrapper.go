@@ -9,11 +9,9 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/condrowiyono/living-rooms-api/app/model"
 )
 
 type TheMovieDB struct {
@@ -101,38 +99,8 @@ func GetMovieDetail(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(resp.Body)
 	var theMovieDB TheMovieDB
 	err = json.Unmarshal(body, &theMovieDB)
-	releasedDate, _ := time.Parse(theMovieDB.ReleaseDate, "2020-02-02")
-	releasedYear := releasedDate.Year()
 
-	show := model.Show{
-		Title:     theMovieDB.Title,
-		Actors:    "",
-		Awards:    "",
-		BoxOffice: "",
-		Country:   "",
-		DVD:       "",
-		Director:  "",
-		Genre:     "",
-		Language:  theMovieDB.OriginalLanguage,
-		Plot:      theMovieDB.Overview,
-		Poster:    fmt.Sprintf("https://image.tmdb.org/t/p/w370_and_h556_bestv2%s", theMovieDB.PosterPath),
-		// Production: map[interface]string{}theMovieDB.ProductionCompanies,
-		Rated:      "",
-		Released:   theMovieDB.ReleaseDate,
-		Response:   "",
-		Runtime:    strconv.Itoa(theMovieDB.Runtime),
-		Type:       "movie",
-		Website:    theMovieDB.Homepage,
-		Writer:     "",
-		Year:       strconv.Itoa(releasedYear),
-		ImdbID:     theMovieDB.ImdbID,
-		ImdbRating: "",
-		ImdbVotes:  "",
-		Banner:     fmt.Sprintf("https://image.tmdb.org/t/p/original%s", theMovieDB.BackdropPath),
-		Trailer:    "",
-		PlayerURL:  "",
-	}
-	respondJSON(w, http.StatusOK, nil, show)
+	respondJSON(w, http.StatusOK, nil, theMovieDB)
 }
 
 func SearchMovie(w http.ResponseWriter, r *http.Request) {
@@ -198,4 +166,42 @@ func GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {
 	var duckDuckGoImageResult DuckDuckGoImageResult
 	err = json.Unmarshal(body, &duckDuckGoImageResult)
 	respondJSON(w, http.StatusOK, nil, duckDuckGoImageResult.Results)
+}
+
+func GetGoogleImage(w http.ResponseWriter, r *http.Request) {
+	// Request the HTML page.
+	vars := r.URL.Query()
+	query := string(vars.Get("query"))
+	queryEscaped := url.QueryEscape(query)
+	googleURL := fmt.Sprintf("https://www.google.co.id/search?q=%s&source=lnms&tbm=isch", queryEscaped)
+	req, err := http.NewRequest("GET", googleURL, nil)
+	if err != nil {
+		log.Fatal("Error reading request. ", err)
+	}
+
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.116 Safari/537.36 Edg/80.0.361.57")
+
+	client := &http.Client{Timeout: time.Second * 10}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal("Error reading response. ", err)
+	}
+
+	var resultImage []string
+
+	// Load the HTML document
+	doc, _ := goquery.NewDocumentFromReader(resp.Body)
+	doc.Find("body").Each(func(i int, s *goquery.Selection) {
+		s.Find("script").Each(func(i int, sc *goquery.Selection) {
+			js := sc.Text()
+			regexpImageURL := regexp.MustCompile(`(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)`)
+			regexpImageURLFound := regexpImageURL.FindAllString(js, -1)
+			if len(regexpImageURLFound) > 0 {
+				resultImage = regexpImageURLFound
+			}
+		})
+	})
+	respondJSON(w, http.StatusOK, nil, map[string]interface{}{"total": len(resultImage), "results": resultImage})
 }
