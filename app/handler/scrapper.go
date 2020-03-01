@@ -87,6 +87,28 @@ type DuckDuckGoImageResult struct {
 	} `json:"results"`
 }
 
+type TMDBMovieImage struct {
+	ID        int `json:"id"`
+	Backdrops []struct {
+		AspectRatio float64     `json:"aspect_ratio"`
+		FilePath    string      `json:"file_path"`
+		Height      int         `json:"height"`
+		Iso6391     interface{} `json:"iso_639_1"`
+		VoteAverage float64     `json:"vote_average"`
+		VoteCount   int         `json:"vote_count"`
+		Width       int         `json:"width"`
+	} `json:"backdrops"`
+	Posters []struct {
+		AspectRatio float64 `json:"aspect_ratio"`
+		FilePath    string  `json:"file_path"`
+		Height      int     `json:"height"`
+		Iso6391     string  `json:"iso_639_1"`
+		VoteAverage float64 `json:"vote_average"`
+		VoteCount   int     `json:"vote_count"`
+		Width       int     `json:"width"`
+	} `json:"posters"`
+}
+
 func GetMovieDetail(w http.ResponseWriter, r *http.Request) {
 	vars := r.URL.Query()
 	tmdbID := string(vars.Get("tmdb"))
@@ -101,6 +123,22 @@ func GetMovieDetail(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &theMovieDB)
 
 	respondJSON(w, http.StatusOK, nil, theMovieDB)
+}
+
+func GetMovieImage(w http.ResponseWriter, r *http.Request) {
+	vars := r.URL.Query()
+	tmdbID := string(vars.Get("tmdb"))
+	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/images?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
+	resp, err := http.Get(apiURL)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	var tmdbMovieImage TMDBMovieImage
+	err = json.Unmarshal(body, &tmdbMovieImage)
+
+	respondJSON(w, http.StatusOK, nil, tmdbMovieImage)
 }
 
 func SearchMovie(w http.ResponseWriter, r *http.Request) {

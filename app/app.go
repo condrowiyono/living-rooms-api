@@ -50,7 +50,8 @@ func (a *App) setRouters() {
 
 	// Partner 3rd party provider, thanks them
 	a.GetWithAuth("/partner/tmdb/movie-detail", a.GetMovieDetail)
-	a.GetWithAuth("/partner/tmdb/search-movie", a.GetSearchMovie)
+	a.GetWithAuth("/partner/tmdb/movie-search", a.GetSearchMovie)
+	a.GetWithAuth("/partner/tmdb/movie-image", a.GetMovieImage)
 	a.GetWithAuth("/partner/duckduckgo/image-search", a.GetDuckDuckGoImage)
 	a.GetWithAuth("/partner/google/image-search", a.GetGoogleImage)
 
@@ -105,12 +106,17 @@ func (a *App) GetMyDetail(w http.ResponseWriter, r *http.Request) {
 	handler.GetMyDetail(a.DB, w, r)
 }
 
+// PARTNER
+
 // GetMovieDetail handler
 func (a *App) GetMovieDetail(w http.ResponseWriter, r *http.Request) {
 	handler.GetMovieDetail(w, r)
 }
 
-// PARTNER
+// GetMovieImage handler
+func (a *App) GetMovieImage(w http.ResponseWriter, r *http.Request) {
+	handler.GetMovieImage(w, r)
+}
 
 // GetSearchMovie handler
 func (a *App) GetSearchMovie(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var err error
+
 func Login(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	var request model.User
 	decoder := json.NewDecoder(r.Body)
