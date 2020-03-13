@@ -2,7 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/condrowiyono/living-rooms-api/app/model"
@@ -39,7 +42,7 @@ func GetAllImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	// Count all data
 	var count int64
 	query = query.Offset(0)
-	query.Table("images").Count(&count)
+	query.Model(&model.Image{}).Count(&count)
 
 	// Write Response
 	meta := Meta{limitInt, offsetInt, pageInt, count}
@@ -110,6 +113,47 @@ func DeleteImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusNoContent, nil, nil)
+}
+
+func UploadImage(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20)
+
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+
+	tempFile, err := ioutil.TempFile("uploads", "upload-*.png")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer tempFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	tempFile.Write(fileBytes)
+
+	//Save to DB
+	image := model.Image{
+		Path:    fmt.Sprintf("%s/%s", os.Getenv("BASE_URL"), tempFile.Name()),
+		Source:  "upload",
+		Keyword: "keyword",
+	}
+
+	if err := db.Save(&image).Error; err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, nil, image)
 }
 
 // getImageOr404 gets a instance if exists, or respond the 404 error otherwise

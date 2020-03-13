@@ -87,3 +87,9 @@ func (a *App) PutWithAuth(path string, f func(w http.ResponseWriter, r *http.Req
 func (a *App) DeleteWithAuth(path string, f func(w http.ResponseWriter, r *http.Request)) {
 	a.Router.Handle(path, authMiddleware(http.HandlerFunc(f))).Methods("DELETE")
 }
+
+// Static handle router for static file
+func (a *App) Static() {
+	a.Router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/",
+		http.FileServer(http.Dir("uploads/"))))
+}

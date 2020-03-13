@@ -1,0 +1,7 @@
+# ignore all
+*
+
+# bu keep gitignore
+!.gitignore
+
+.DS_Store

@@ -43,6 +43,9 @@ func (a *App) setRouters() {
 	// Routing for handling the projects
 	a.Get("/healthz", a.HealthzCheck)
 
+	// Static file
+	a.Static()
+
 	//Auth
 	a.Post("/login", a.Login)
 	a.Post("/register", a.Register)
@@ -82,6 +85,11 @@ func (a *App) setRouters() {
 	a.Get("/image/{id}", a.GetImage)
 	a.PutWithAuth("/image/{id}", a.UpdateImage)
 	a.DeleteWithAuth("/image/{id}", a.DeleteImage)
+	a.Post("/image/upload-image", a.UploadImage)
+
+	// Player Resources
+	a.Get("/player", a.GetPlayer)
+	a.Get("/video", a.GetVideo)
 }
 
 // HealthzCheck handler
@@ -239,6 +247,21 @@ func (a *App) UpdateImage(w http.ResponseWriter, r *http.Request) {
 // DeleteImage handler
 func (a *App) DeleteImage(w http.ResponseWriter, r *http.Request) {
 	handler.DeleteImage(a.DB, w, r)
+}
+
+// UploadImage handler
+func (a *App) UploadImage(w http.ResponseWriter, r *http.Request) {
+	handler.UploadImage(a.DB, w, r)
+}
+
+// GetPlayer hanlder
+func (a *App) GetPlayer(w http.ResponseWriter, r *http.Request) {
+	handler.GetPlayer(a.DB, w, r)
+}
+
+// GetVideo hanlder
+func (a *App) GetVideo(w http.ResponseWriter, r *http.Request) {
+	handler.GetVideo(a.DB, w, r)
 }
 
 // Run the app on it's router

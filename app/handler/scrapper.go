@@ -14,6 +14,21 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+type CommonImageResult struct {
+	Thumbnail string `json:"thumbnail"`
+	Image     string `json:"image"`
+}
+
+type TheMovieDBCredits struct {
+	Cast []TheMovieDBPerson `json:"cast"`
+	Crew []TheMovieDBPerson `json:"crew"`
+}
+
+type TheMovieDBPerson struct {
+	Name        string `json:"name"`
+	ProfilePath string `json:"profile_path"`
+}
+
 type TheMovieDB struct {
 	Adult               bool        `json:"adult"`
 	BackdropPath        string      `json:"backdrop_path"`
@@ -48,12 +63,24 @@ type TheMovieDB struct {
 		Iso639_1 string `json:"iso_639_1"`
 		Name     string `json:"name"`
 	} `json:"spoken_languages"`
-	Status      string  `json:"status"`
-	Tagline     string  `json:"tagline"`
-	Title       string  `json:"title"`
-	Video       bool    `json:"video"`
-	VoteAverage float64 `json:"vote_average"`
-	VoteCount   int     `json:"vote_count"`
+	Status      string             `json:"status"`
+	Tagline     string             `json:"tagline"`
+	Title       string             `json:"title"`
+	Video       bool               `json:"video"`
+	VoteAverage float64            `json:"vote_average"`
+	VoteCount   int                `json:"vote_count"`
+	Actors      []TheMovieDBPerson `json:"actors"`
+	Crews       []TheMovieDBPerson `json:"crews"`
+	Videos      []TheMovieDBVideo  `json:"videos"`
+}
+
+type TheMovieDBVideos struct {
+	Results []TheMovieDBVideo `json:"results"`
+}
+type TheMovieDBVideo struct {
+	Key  string `json:"key"`
+	Site string `json:"site"`
+	Type string `json:"type"`
 }
 
 type TMDBSearch struct {
@@ -76,15 +103,17 @@ type TMDBSearch struct {
 }
 
 type DuckDuckGoImageResult struct {
-	Results []struct {
-		Height    int    `json:"height"`
-		URL       string `json:"url"`
-		Width     int    `json:"width"`
-		Source    string `json:"source"`
-		Title     string `json:"title"`
-		Thumbnail string `json:"thumbnail"`
-		Image     string `json:"image"`
-	} `json:"results"`
+	Results []DuckDuckGoImageResultData `json:"results"`
+}
+
+type DuckDuckGoImageResultData struct {
+	Height    int    `json:"height"`
+	URL       string `json:"url"`
+	Width     int    `json:"width"`
+	Source    string `json:"source"`
+	Title     string `json:"title"`
+	Thumbnail string `json:"thumbnail"`
+	Image     string `json:"image"`
 }
 
 type TMDBMovieImage struct {
@@ -122,12 +151,37 @@ func GetMovieDetail(w http.ResponseWriter, r *http.Request) {
 	var theMovieDB TheMovieDB
 	err = json.Unmarshal(body, &theMovieDB)
 
+	creditURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/credits?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
+	resp, err = http.Get(creditURL)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	var theMovieDBCredits TheMovieDBCredits
+	err = json.Unmarshal(body, &theMovieDBCredits)
+
+	theMovieDB.Actors = theMovieDBCredits.Cast
+
+	videosURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/videos?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
+	resp, err = http.Get(videosURL)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	var theMovieDBVideos TheMovieDBVideos
+	err = json.Unmarshal(body, &theMovieDBVideos)
+
+	theMovieDB.Videos = theMovieDBVideos.Results
 	respondJSON(w, http.StatusOK, nil, theMovieDB)
 }
 
 func GetMovieImage(w http.ResponseWriter, r *http.Request) {
 	vars := r.URL.Query()
 	tmdbID := string(vars.Get("tmdb"))
+	imageType := string(vars.Get("type"))
+
 	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/images?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
 	resp, err := http.Get(apiURL)
 	if err != nil {
@@ -138,7 +192,27 @@ func GetMovieImage(w http.ResponseWriter, r *http.Request) {
 	var tmdbMovieImage TMDBMovieImage
 	err = json.Unmarshal(body, &tmdbMovieImage)
 
-	respondJSON(w, http.StatusOK, nil, tmdbMovieImage)
+	var commonImageResultArray []CommonImageResult
+
+	if imageType == "banners" {
+		for _, v := range tmdbMovieImage.Backdrops {
+			commonImageResult := CommonImageResult{
+				Thumbnail: fmt.Sprintf("https://image.tmdb.org/t/p/w500_and_h282_face%s", v.FilePath),
+				Image:     fmt.Sprintf("https://image.tmdb.org/t/p/original%s", v.FilePath),
+			}
+			commonImageResultArray = append(commonImageResultArray, commonImageResult)
+		}
+	} else if imageType == "posters" {
+		for _, v := range tmdbMovieImage.Posters {
+			commonImageResult := CommonImageResult{
+				Thumbnail: fmt.Sprintf("https://image.tmdb.org/t/p/w220_and_h330_face%s", v.FilePath),
+				Image:     fmt.Sprintf("https://image.tmdb.org/t/p/original%s", v.FilePath),
+			}
+			commonImageResultArray = append(commonImageResultArray, commonImageResult)
+		}
+	}
+
+	respondJSON(w, http.StatusOK, nil, commonImageResultArray)
 }
 
 func SearchMovie(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +277,18 @@ func GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(resp.Body)
 	var duckDuckGoImageResult DuckDuckGoImageResult
 	err = json.Unmarshal(body, &duckDuckGoImageResult)
-	respondJSON(w, http.StatusOK, nil, duckDuckGoImageResult.Results)
+
+	var commonImageResultArray []CommonImageResult
+
+	for _, v := range duckDuckGoImageResult.Results {
+		commonImageResult := CommonImageResult{
+			Thumbnail: v.Thumbnail,
+			Image:     v.Image,
+		}
+		commonImageResultArray = append(commonImageResultArray, commonImageResult)
+	}
+
+	respondJSON(w, http.StatusOK, nil, commonImageResultArray)
 }
 
 func GetGoogleImage(w http.ResponseWriter, r *http.Request) {
@@ -241,5 +326,16 @@ func GetGoogleImage(w http.ResponseWriter, r *http.Request) {
 			}
 		})
 	})
-	respondJSON(w, http.StatusOK, nil, map[string]interface{}{"total": len(resultImage), "results": resultImage})
+
+	var commonImageResultArray []CommonImageResult
+
+	for _, v := range resultImage {
+		commonImageResult := CommonImageResult{
+			Thumbnail: v,
+			Image:     v,
+		}
+		commonImageResultArray = append(commonImageResultArray, commonImageResult)
+	}
+
+	respondJSON(w, http.StatusOK, nil, commonImageResultArray)
 }

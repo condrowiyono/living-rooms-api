@@ -36,8 +36,10 @@ type Person struct {
 // Including Type banner, poster, profile_picture, general, etc
 type Image struct {
 	gorm.Model
-	Type string `json:"type"`
-	Path string `json:"path" gorm:"type:text"`
+	Type    string `json:"type"`
+	Keyword string `json:"keyword"`
+	Source  string `json:"source"`
+	Path    string `json:"path" gorm:"type:text"`
 }
 
 // Genre will serve all genre needed
@@ -59,7 +61,7 @@ type Movie struct {
 	gorm.Model
 	Banners          []Image   `json:"banners" gorm:"many2many:movies_banners;"`
 	Budget           int       `json:"budget"`
-	Genres           []Genre   `json:"genres" gorm:"many2many:movies_genres;"`
+	Genres           []Genre   `json:"genres" gorm:"many2many:movies_genres;association_autocreate:false;"`
 	Homepage         string    `json:"homepage"`
 	TmdbID           int       `json:"tmdb_id"`
 	ImdbID           string    `json:"imdb_id"`
@@ -71,7 +73,7 @@ type Movie struct {
 	ReleaseDate      string    `json:"release_date"`
 	Revenue          int       `json:"revenue"`
 	Runtime          int       `json:"runtime"`
-	Languages        []Country `json:"language" gorm:"many2many:movies_languages;"`
+	Languages        []Country `json:"language" gorm:"many2many:movies_languages;association_autocreate:false;"`
 	Status           string    `json:"status"`
 	Tagline          string    `json:"tagline"`
 	Title            string    `json:"title"`
@@ -79,23 +81,33 @@ type Movie struct {
 	VoteCount        int       `json:"vote_count"`
 	ImdbRating       int       `json:"imdb_rating"`
 	Awards           string    `json:"awards"`
-	Actors           []Person  `json:"actors" gorm:"many2many:movies_actors;"`
+	Actors           []Person  `json:"actors" gorm:"many2many:movies_actors;association_autocreate:false;"`
 	CountryID        int       `json:"-"`
-	Country          Country   `json:"original_country"`
-	Crews            []Person  `json:"crews" gorm:"many2many:movies_crews;"`
+	Country          Country   `json:"original_country" gorm:"association_autocreate:false;"`
+	Crews            []Person  `json:"crews" gorm:"many2many:movies_crews;association_autocreate:false;"`
 	Rated            string    `json:"rated"`
 	Player           Player    `json:"player" gorm:"polymorphic:Show;"`
+	Videos           []Video   `json:"videos" gorm:"polymorphic:Show;"`
 }
 
 // Player will act player for every media supported in this app.
 // That include movie, tv series, anime, bal-balan, etc
 type Player struct {
 	gorm.Model
-	Type      string `gorm:"type:text"`
+	Type      string `json:"type" gorm:"type:text"`
 	Source    string `json:"source"`
 	PlayerURL string `json:"player_url" gorm:"type:text"`
 	ShowID    int    `json:"show_id"`
 	ShowType  string `json:"show_type"`
+}
+
+type Video struct {
+	gorm.Model
+	Type     string `json:"type" gorm:"type:text"`
+	Source   string `json:"source"`
+	VideoURL string `json:"player_url" gorm:"type:text"`
+	ShowID   int    `json:"show_id"`
+	ShowType string `json:"show_type"`
 }
 
 // DBMigrate will create and migrate the tables, and then make the some relationships if necessary
@@ -109,6 +121,7 @@ func DBMigrate(db *gorm.DB) *gorm.DB {
 		&Country{},
 		&Movie{},
 		&Player{},
+		&Video{},
 	)
 	return db
 }

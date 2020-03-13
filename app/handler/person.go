@@ -28,7 +28,7 @@ func GetAllPerson(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	offsetInt := (pageInt - 1) * limitInt
 	var count int64
 	query := db.Offset(0)
-	query.Table("people").Count(&count)
+	query.Model(&model.Person{}).Count(&count)
 
 	person := []model.Person{}
 	query = db.Limit(limitInt).

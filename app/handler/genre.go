@@ -39,7 +39,7 @@ func GetAllGenre(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	// Count all data
 	var count int64
 	query = query.Offset(0)
-	query.Table("genres").Count(&count)
+	query.Model(&model.Genre{}).Count(&count)
 
 	// Write Response
 	meta := Meta{limitInt, offsetInt, pageInt, count}
