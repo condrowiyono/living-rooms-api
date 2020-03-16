@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -14,39 +15,59 @@ func GetAllMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	vars := r.URL.Query()
 
 	page := string(vars.Get("page"))
+	limit := string(vars.Get("limit"))
+	genre := string(vars.Get("genre"))
+	title := string(vars.Get("title"))
+
 	pageInt, err := strconv.Atoi(page)
 	if err != nil {
 		pageInt = 1
 	}
 
-	limit := string(vars.Get("limit"))
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil {
 		limitInt = 25
 	}
 
 	offsetInt := (pageInt - 1) * limitInt
-	var count int64
-	query := db.Offset(0)
-	query.Model(&model.Movie{}).Count(&count)
-
 	movie := []model.Movie{}
-	query = db.Limit(limitInt).
+	query := db.Model(model.Movie{})
+
+	queryWhereIn := db.Model(model.Movie{}).Select("DISTINCT(movies.id)")
+
+	if len(genre) != 0 {
+		queryWhereIn = queryWhereIn.
+			Joins("join movies_genres on movies_genres.movie_id = movies.id").
+			Joins("join genres on genres.id = movies_genres.genre_id AND genres.name = ?", genre)
+	}
+
+	if len(title) != 0 {
+		query = query.Where("title LIKE ?", fmt.Sprintf("%%%s%%", title))
+	}
+
+	query = query.
+		Where("id IN (?)", queryWhereIn.QueryExpr()).
+		Limit(limitInt).
 		Offset(offsetInt).
-		Preload("Banners").
 		Preload("Genres").
+		Preload("Banners").
 		Preload("Posters").
 		Preload("Languages").
-		Preload("Country").
+		Preload("Countries").
+		Preload("Productions").
 		Preload("Actors").
 		Preload("Crews").
 		Preload("Player").
-		Find(&movie)
+		Preload("Videos")
 
-	if err := query.Error; err != nil {
+	if err := query.Find(&movie).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	var count int64
+	query = query.Offset(0).
+		Count(&count)
 
 	// Write Response
 	meta := Meta{limitInt, offsetInt, pageInt, count}
@@ -73,6 +94,8 @@ func CreateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	actors := []model.Person{}
 	crews := []model.Person{}
 	languages := []model.Country{}
+	countries := []model.Country{}
+	productions := []model.Production{}
 
 	for _, v := range movie.Genres {
 		genre := model.Genre{}
@@ -94,18 +117,28 @@ func CreateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
 	for _, v := range movie.Languages {
 		language := model.Country{}
-		db.Where(model.Country{Iso639_1: v.Iso639_1}).FirstOrCreate(&language)
+		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&language)
 		languages = append(languages, language)
 	}
 
-	originalCountry := model.Country{}
-	db.Where(model.Country{Iso639_1: movie.Country.Iso639_1}).FirstOrCreate(&originalCountry)
+	for _, v := range movie.Countries {
+		country := model.Country{}
+		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&country)
+		countries = append(countries, country)
+	}
+
+	for _, v := range movie.Productions {
+		production := model.Production{}
+		db.Where(model.Production{Name: v.Name}).FirstOrCreate(&production)
+		productions = append(productions, production)
+	}
 
 	db.Model(&movie).Association("Genres").Replace(genres)
 	db.Model(&movie).Association("Actors").Replace(actors)
 	db.Model(&movie).Association("Crews").Replace(crews)
 	db.Model(&movie).Association("Languages").Replace(languages)
-	db.Model(&movie).Association("Country").Replace(originalCountry)
+	db.Model(&movie).Association("Countries").Replace(countries)
+	db.Model(&movie).Association("Productions").Replace(productions)
 
 	respondJSON(w, http.StatusCreated, nil, movie)
 }
@@ -147,6 +180,8 @@ func UpdateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	actors := []model.Person{}
 	crews := []model.Person{}
 	languages := []model.Country{}
+	countries := []model.Country{}
+	productions := []model.Production{}
 
 	for _, v := range movie.Genres {
 		genre := model.Genre{}
@@ -168,18 +203,28 @@ func UpdateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 
 	for _, v := range movie.Languages {
 		language := model.Country{}
-		db.Where(model.Country{Iso639_1: v.Iso639_1}).FirstOrCreate(&language)
+		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&language)
 		languages = append(languages, language)
 	}
 
-	originalCountry := model.Country{}
-	db.Where(model.Country{Iso639_1: movie.Country.Iso639_1}).FirstOrCreate(&originalCountry)
+	for _, v := range movie.Countries {
+		country := model.Country{}
+		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&country)
+		countries = append(countries, country)
+	}
+
+	for _, v := range movie.Productions {
+		production := model.Production{}
+		db.Where(model.Production{Name: v.Name}).FirstOrCreate(&production)
+		productions = append(productions, production)
+	}
 
 	db.Model(&movie).Association("Genres").Replace(genres)
 	db.Model(&movie).Association("Actors").Replace(actors)
 	db.Model(&movie).Association("Crews").Replace(crews)
 	db.Model(&movie).Association("Languages").Replace(languages)
-	db.Model(&movie).Association("Country").Replace(originalCountry)
+	db.Model(&movie).Association("Country").Replace(countries)
+	db.Model(&movie).Association("Productions").Replace(productions)
 
 	respondJSON(w, http.StatusOK, nil, movie)
 }
@@ -207,7 +252,8 @@ func getMovieOr404(db *gorm.DB, id int64, w http.ResponseWriter, r *http.Request
 		Preload("Genres").
 		Preload("Posters").
 		Preload("Languages").
-		Preload("Country").
+		Preload("Countries").
+		Preload("Productions").
 		Preload("Actors").
 		Preload("Crews").
 		Preload("Player").

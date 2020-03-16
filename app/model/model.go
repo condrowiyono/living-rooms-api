@@ -51,43 +51,41 @@ type Genre struct {
 // Country will serve all country needed, including language and origin country
 type Country struct {
 	gorm.Model
-	Iso639_1 string `json:"iso_639_1"`
-	Name     string `json:"name"`
+	Name string `json:"name"`
+}
+
+type Production struct {
+	gorm.Model
+	Name          string `json:"name"`
+	OriginCountry string `json:"origin_country"`
 }
 
 // Movie hold every component detail about a movie
 // Movie is one of other media consumption suppored here
 type Movie struct {
 	gorm.Model
-	Banners          []Image   `json:"banners" gorm:"many2many:movies_banners;"`
-	Budget           int       `json:"budget"`
-	Genres           []Genre   `json:"genres" gorm:"many2many:movies_genres;association_autocreate:false;"`
-	Homepage         string    `json:"homepage"`
-	TmdbID           int       `json:"tmdb_id"`
-	ImdbID           string    `json:"imdb_id"`
-	OriginalLanguage string    `json:"original_language"`
-	OriginalTitle    string    `json:"original_title"`
-	Overview         string    `json:"overview" gorm:"type:text"`
-	Popularity       float64   `json:"popularity"`
-	Posters          []Image   `json:"posters" gorm:"many2many:movies_posters;"`
-	ReleaseDate      string    `json:"release_date"`
-	Revenue          int       `json:"revenue"`
-	Runtime          int       `json:"runtime"`
-	Languages        []Country `json:"language" gorm:"many2many:movies_languages;association_autocreate:false;"`
-	Status           string    `json:"status"`
-	Tagline          string    `json:"tagline"`
-	Title            string    `json:"title"`
-	VoteAverage      float64   `json:"vote_average"`
-	VoteCount        int       `json:"vote_count"`
-	ImdbRating       int       `json:"imdb_rating"`
-	Awards           string    `json:"awards"`
-	Actors           []Person  `json:"actors" gorm:"many2many:movies_actors;association_autocreate:false;"`
-	CountryID        int       `json:"-"`
-	Country          Country   `json:"original_country" gorm:"association_autocreate:false;"`
-	Crews            []Person  `json:"crews" gorm:"many2many:movies_crews;association_autocreate:false;"`
-	Rated            string    `json:"rated"`
-	Player           Player    `json:"player" gorm:"polymorphic:Show;"`
-	Videos           []Video   `json:"videos" gorm:"polymorphic:Show;"`
+	Banners          []Image      `json:"banners" gorm:"many2many:movies_banners;"`
+	Genres           []Genre      `json:"genres" gorm:"many2many:movies_genres;association_autocreate:false;"`
+	TmdbID           int          `json:"tmdb_id"`
+	ImdbID           string       `json:"imdb_id"`
+	OriginalLanguage string       `json:"original_language"`
+	Overview         string       `json:"overview" gorm:"type:text"`
+	Posters          []Image      `json:"posters" gorm:"many2many:movies_posters;"`
+	ReleaseDate      string       `json:"release_date"`
+	Runtime          int          `json:"runtime"`
+	Languages        []Country    `json:"language" gorm:"many2many:movies_languages;association_autocreate:false;"`
+	Title            string       `json:"title"`
+	VoteAverage      float64      `json:"vote_average"`
+	ImdbRating       float64      `json:"imdb_rating"`
+	Awards           string       `json:"awards"`
+	Actors           []Person     `json:"actors" gorm:"many2many:movies_actors;association_autocreate:false;"`
+	Productions      []Production `json:"productions" gorm:"many2many:movies_productions;association_autocreate:false;"`
+	Countries        []Country    `json:"countries" gorm:"many2many:movies_countries;association_autocreate:false;"`
+	Crews            []Person     `json:"crews" gorm:"many2many:movies_crews;association_autocreate:false;"`
+	Director         string       `json:"director"`
+	Rated            string       `json:"rated"`
+	Player           Player       `json:"player" gorm:"polymorphic:Show;"`
+	Videos           []Video      `json:"videos" gorm:"polymorphic:Show;"`
 }
 
 // Player will act player for every media supported in this app.
@@ -122,6 +120,7 @@ func DBMigrate(db *gorm.DB) *gorm.DB {
 		&Movie{},
 		&Player{},
 		&Video{},
+		&Production{},
 	)
 	return db
 }
