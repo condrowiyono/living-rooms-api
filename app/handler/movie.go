@@ -227,6 +227,8 @@ func UpdateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	db.Model(&movie).Association("Productions").Replace(productions)
 	db.Model(&movie).Association("Videos").Replace(movie.Videos)
 	db.Model(&movie).Association("Player").Replace(movie.Player)
+	db.Model(&movie).Association("Banners").Replace(movie.Banners)
+	db.Model(&movie).Association("Posters").Replace(movie.Posters)
 
 	respondJSON(w, http.StatusOK, nil, movie)
 }
