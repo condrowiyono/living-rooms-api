@@ -134,74 +134,55 @@ type TMDBMovieImage struct {
 }
 
 func GetMovieDetail(w http.ResponseWriter, r *http.Request) {
-	vars := r.URL.Query()
-	tmdbID := string(vars.Get("tmdb"))
-	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
 	var theMovieDB TheMovieDB
+	var theMovieDBCredits TheMovieDBCredits
+	var theMovieDBVideos TheMovieDBVideos
+	var omdb OMDBAdditionalInfo
+
+	tmdbID := getHTTPRequestQuery(r, "tmdb")
+
+	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
+	creditURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/credits?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
+	videosURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/videos?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
+
+	body, _ := getHTTPRequestGetBody(apiURL)
 	err = json.Unmarshal(body, &theMovieDB)
 
-	creditURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/credits?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-	resp, err = http.Get(creditURL)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
-	var theMovieDBCredits TheMovieDBCredits
+	body, _ = getHTTPRequestGetBody(creditURL)
 	err = json.Unmarshal(body, &theMovieDBCredits)
 
-	theMovieDB.Actors = theMovieDBCredits.Cast[0:10]
-
-	videosURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/videos?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-	resp, err = http.Get(videosURL)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
-	var theMovieDBVideos TheMovieDBVideos
+	body, _ = getHTTPRequestGetBody(videosURL)
 	err = json.Unmarshal(body, &theMovieDBVideos)
 
-	theMovieDB.Videos = theMovieDBVideos.Results
-
 	omdbURL := fmt.Sprintf("http://www.omdbapi.com/?i=%s&apikey=%s", theMovieDB.ImdbID, os.Getenv("OMDB_KEY"))
-	resp, err = http.Get(omdbURL)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
-	var omdb OMDBAdditionalInfo
+	body, _ = getHTTPRequestGetBody(omdbURL)
 	err = json.Unmarshal(body, &omdb)
 
+	s, _ := strconv.ParseFloat(omdb.ImdbRating, 64)
+
+	theMovieDB.Videos = theMovieDBVideos.Results
 	theMovieDB.Director = omdb.Director
 	theMovieDB.Awards = omdb.Awards
 	theMovieDB.Rated = omdb.Rated
-	if s, err := strconv.ParseFloat(omdb.ImdbRating, 64); err == nil {
-		theMovieDB.ImdbRating = s
+	theMovieDB.ImdbRating = s
+
+	if len(theMovieDBCredits.Cast) > 10 {
+		theMovieDB.Actors = theMovieDBCredits.Cast[0:10]
+	} else {
+		theMovieDB.Actors = theMovieDBCredits.Cast
 	}
 
 	respondJSON(w, http.StatusOK, nil, theMovieDB)
 }
 
 func GetMovieImage(w http.ResponseWriter, r *http.Request) {
-	vars := r.URL.Query()
-	tmdbID := string(vars.Get("tmdb"))
-	imageType := string(vars.Get("type"))
+	tmdbID := getHTTPRequestQuery(r, "tmdb")
+	imageType := getHTTPRequestQuery(r, "type")
 
 	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/images?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+
+	body, _ := getHTTPRequestGetBody(apiURL)
+
 	var tmdbMovieImage TMDBMovieImage
 	err = json.Unmarshal(body, &tmdbMovieImage)
 
@@ -229,32 +210,22 @@ func GetMovieImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func SearchMovie(w http.ResponseWriter, r *http.Request) {
-	vars := r.URL.Query()
-	query := string(vars.Get("query"))
-	queryEscaped := url.PathEscape(query)
-
-	url := fmt.Sprintf("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s", os.Getenv("TMDB_KEY"), queryEscaped)
-	resp, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
 	var tmdbSearch TMDBSearch
+
+	query := getHTTPRequestQuery(r, "query")
+
+	url := fmt.Sprintf("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s", os.Getenv("TMDB_KEY"), url.PathEscape(query))
+	body, _ := getHTTPRequestGetBody(url)
 	err = json.Unmarshal(body, &tmdbSearch)
 	respondJSON(w, http.StatusOK, nil, tmdbSearch.Results)
 }
 
 func GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {
 	// Request the HTML page.
-	vars := r.URL.Query()
-	query := string(vars.Get("query"))
-	queryEscaped := url.QueryEscape(query)
-	duckduckGoURL := fmt.Sprintf("https://duckduckgo.com/?q=%s&iar=images&iax=images&ia=images", queryEscaped)
-	res, err := http.Get(duckduckGoURL)
-	if err != nil {
-		log.Fatal(err)
-	}
+	query := getHTTPRequestQuery(r, "query")
+
+	duckduckGoURL := fmt.Sprintf("https://duckduckgo.com/?q=%s&iar=images&iax=images&ia=images", url.QueryEscape(query))
+	res, _ := http.Get(duckduckGoURL)
 	defer res.Body.Close()
 
 	var vqd string
@@ -306,10 +277,9 @@ func GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {
 
 func GetGoogleImage(w http.ResponseWriter, r *http.Request) {
 	// Request the HTML page.
-	vars := r.URL.Query()
-	query := string(vars.Get("query"))
-	queryEscaped := url.QueryEscape(query)
-	googleURL := fmt.Sprintf("https://www.google.co.id/search?q=%s&source=lnms&tbm=isch", queryEscaped)
+	query := getHTTPRequestQuery(r, "query")
+	googleURL := fmt.Sprintf("https://www.google.co.id/search?q=%s&source=lnms&tbm=isch", url.QueryEscape(query))
+
 	req, err := http.NewRequest("GET", googleURL, nil)
 	if err != nil {
 		log.Fatal("Error reading request. ", err)
