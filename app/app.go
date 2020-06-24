@@ -21,9 +21,10 @@ type App struct {
 
 // Initialize with predefined configuration
 func (a *App) Initialize(config *config.Config) {
-	dbURI := fmt.Sprintf("%s:%s@/%s?charset=%s&parseTime=True",
+	dbURI := fmt.Sprintf("%s:%s@(%s)/%s?charset=%s&parseTime=True",
 		config.DB.Username,
 		config.DB.Password,
+		config.DB.Host,
 		config.DB.Name,
 		config.DB.Charset)
 
@@ -90,6 +91,13 @@ func (a *App) setRouters() {
 	// Player Resources
 	a.Get("/player", a.GetPlayer)
 	a.Get("/video", a.GetVideo)
+
+	// Concert Resource
+	a.Get("/concert", a.GetAllConcert)
+	a.PostWithAuth("/concert", a.CreateConcert)
+	a.Get("/concert/{id}", a.GetConcert)
+	a.PutWithAuth("/concert/{id}", a.UpdateConcert)
+	a.DeleteWithAuth("/concert/{id}", a.DeleteConcert)
 }
 
 // HealthzCheck handler
@@ -262,6 +270,33 @@ func (a *App) GetPlayer(w http.ResponseWriter, r *http.Request) {
 // GetVideo hanlder
 func (a *App) GetVideo(w http.ResponseWriter, r *http.Request) {
 	handler.GetVideo(a.DB, w, r)
+}
+
+// Concert
+
+// GetAllConcert handler
+func (a *App) GetAllConcert(w http.ResponseWriter, r *http.Request) {
+	handler.GetAllConcert(a.DB, w, r)
+}
+
+// CreateConcert handler
+func (a *App) CreateConcert(w http.ResponseWriter, r *http.Request) {
+	handler.CreateConcert(a.DB, w, r)
+}
+
+// GetConcert handler
+func (a *App) GetConcert(w http.ResponseWriter, r *http.Request) {
+	handler.GetConcert(a.DB, w, r)
+}
+
+// UpdateConcert handler
+func (a *App) UpdateConcert(w http.ResponseWriter, r *http.Request) {
+	handler.UpdateConcert(a.DB, w, r)
+}
+
+// DeleteConcert handler
+func (a *App) DeleteConcert(w http.ResponseWriter, r *http.Request) {
+	handler.DeleteConcert(a.DB, w, r)
 }
 
 // Run the app on it's router

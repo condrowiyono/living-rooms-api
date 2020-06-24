@@ -12,6 +12,7 @@ type Config struct {
 }
 
 type DBConfig struct {
+	Host     string
 	Dialect  string
 	Username string
 	Password string
@@ -26,6 +27,7 @@ func GetConfig() *Config {
 	}
 	return &Config{
 		DB: &DBConfig{
+			Host:     os.Getenv("DB_HOST"),
 			Dialect:  os.Getenv("DB_DIALECT"),
 			Username: os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
