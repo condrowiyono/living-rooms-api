@@ -108,6 +108,30 @@ type Video struct {
 	ShowType string `json:"show_type"`
 }
 
+type Artist struct {
+	gorm.Model
+	Name     string  `json:"name"`
+	Bio      string  `json:"bio" gorm:"type:text"`
+	Pictures []Image `json:"pictures" gorm:"many2many:artists_pictures;"`
+}
+
+type Concert struct {
+	gorm.Model
+	Banners     []Image `json:"banners" gorm:"many2many:concerts_banners;"`
+	Posters     []Image `json:"posters" gorm:"many2many:concerts_posters;"`
+	Title       string  `json:"title"`
+	ArtistID    int     `json:"-"`
+	Artist      Artist  `json:"artist"`
+	ConcertDate string  `json:"concert_date"`
+	ReleaseDate string  `json:"release_date"`
+	Place       string  `json:"place"`
+	Type        string  `json:"type"`
+	Overview    string  `json:"overview" gorm:"type:text"`
+	Setlist     string  `json:"setlist" gorm:"type:text"`
+	Player      Player  `json:"player" gorm:"polymorphic:Show;"`
+	Videos      []Video `json:"videos" gorm:"polymorphic:Show;"`
+}
+
 // DBMigrate will create and migrate the tables, and then make the some relationships if necessary
 func DBMigrate(db *gorm.DB) *gorm.DB {
 	db.AutoMigrate(
@@ -121,6 +145,8 @@ func DBMigrate(db *gorm.DB) *gorm.DB {
 		&Player{},
 		&Video{},
 		&Production{},
+		&Artist{},
+		&Concert{},
 	)
 	return db
 }
