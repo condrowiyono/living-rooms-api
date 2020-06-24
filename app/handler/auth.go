@@ -7,7 +7,7 @@ import (
 
 	"os"
 
-	"github.com/condrowiyono/living-rooms-api/app/model"
+	"github.com/condrowiyono/ruangtengah-api/app/model"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"

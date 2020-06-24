@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/condrowiyono/living-rooms-api/app/model"
+	"github.com/condrowiyono/ruangtengah-api/app/model"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 )

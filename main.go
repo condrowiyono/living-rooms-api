@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/condrowiyono/living-rooms-api/app"
-	"github.com/condrowiyono/living-rooms-api/config"
+	"github.com/condrowiyono/ruangtengah-api/app"
+	"github.com/condrowiyono/ruangtengah-api/config"
 )
 
 func main() {

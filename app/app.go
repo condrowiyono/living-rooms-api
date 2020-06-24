@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/condrowiyono/living-rooms-api/app/handler"
-	"github.com/condrowiyono/living-rooms-api/app/model"
-	"github.com/condrowiyono/living-rooms-api/config"
+	"github.com/condrowiyono/ruangtengah-api/app/handler"
+	"github.com/condrowiyono/ruangtengah-api/app/model"
+	"github.com/condrowiyono/ruangtengah-api/config"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/cors"

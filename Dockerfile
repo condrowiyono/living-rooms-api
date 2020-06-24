@@ -5,8 +5,8 @@ RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
 
 # install service dependencies
-RUN mkdir -p /go/src/living_rooms
-WORKDIR /go/src/github.com/condrowiyono/living-rooms-api
+RUN mkdir -p /go/src/github.com/condrowiyono/ruangtengah-api
+WORKDIR /go/src/github.com/condrowiyono/ruangtengah-api
 
 COPY ./Gopkg.toml .
 COPY ./Gopkg.lock .
@@ -16,4 +16,4 @@ COPY . .
 
 RUN go build -o main .
 
-CMD ["/go/src/github.com/condrowiyono/living-rooms-api/main"]
+CMD ["/go/src/github.com/condrowiyono/ruangtengah-api/main"]
