@@ -23,16 +23,18 @@ jobs:
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v1
       with:
-        envkey_DEBUG: 'True'
-        envkey_SECRET_KEY: ${{ secrets.DEV_ENV_SECRET_KEY }}
-        envkey_ALLOWED_HOST: '*'
         envkey_DB_DIALECT: 'mysql'
-        envkey_DB_HOST: '139.59.243.123'
-        envkey_DB_USER: 'user'
-        envkey_DB_PASSWORD: 'password'
-        envkey_DB_NAME: 'living_rooms'
-        envkey_DB_PORT: '3306'
+        envkey_DB_HOST: ${{ secrets.ENV_DB_HOST }}
+        envkey_DB_USER: ${{ secrets.ENV_DB_USER }}
+        envkey_DB_PASSWORD: ${{ secrets.ENV_DB_PASSWORD }}
+        envkey_DB_NAME: ${{ secrets.ENV_DB_NAME }}
+        envkey_DB_PORT: ${{ secrets.ENV_DB_PORT }}
         envkey_DB_CHARSET: 'utf8'
+        envkey_BASE_URL: ${{ secrets.ENV_BASE_URL }}
+        envkey_JWT_SECRET: ${{ secrets.ENV_JWT_SECRET }}
+        envkey_TMDB_KEY: ${{ secrets.ENV_TMDB_KEY }}
+        envkey_GOOGLE_API_KEY: ${{ secrets.ENV_GOOGLE_API_KEY }}
+        envkey_OMDB_KEY: ${{ secrets.ENV_OMDB_KEY }}
         file_name: .env
     
     # Runs a single command using the runners shell
