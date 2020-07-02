@@ -46,4 +46,17 @@ jobs:
         access_token: ${{ secrets.GIT_TOKEN }}
         
     - name: output
-      run: echo ${{ steps.url-GPR.outputs.imageURL }}    
+      run: echo ${{ steps.url-GPR.outputs.imageURL }}   
+ 
+    - name: Deploy
+      uses: fifsky/ssh-action@master
+      with:
+        host: ${{ secrets.DEV_SERVER_ADDRESS }}
+        user: ${{ secrets.DEV_SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY}}
+        command: |
+          docker pull ${{ steps.url-GPR.outputs.imageURL }}:latest
+          docker stack rm ruangtengah
+          until [ -z $(docker stack ps ruangtengah -q) ]; do sleep 1; done
+          docker stack deploy -c ./stack/docker-compose.yml ruangtengah
+          exit;
