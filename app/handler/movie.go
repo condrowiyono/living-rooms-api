@@ -52,7 +52,6 @@ func GetAllMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		Preload("Genres").
 		Preload("Banners").
 		Preload("Posters").
-		Preload("Languages").
 		Preload("Countries").
 		Preload("Productions").
 		Preload("Actors").
@@ -93,7 +92,6 @@ func CreateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	genres := []model.Genre{}
 	actors := []model.Person{}
 	crews := []model.Person{}
-	languages := []model.Country{}
 	countries := []model.Country{}
 	productions := []model.Production{}
 
@@ -115,12 +113,6 @@ func CreateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		crews = append(crews, crew)
 	}
 
-	for _, v := range movie.Languages {
-		language := model.Country{}
-		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&language)
-		languages = append(languages, language)
-	}
-
 	for _, v := range movie.Countries {
 		country := model.Country{}
 		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&country)
@@ -136,7 +128,6 @@ func CreateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	db.Model(&movie).Association("Genres").Replace(genres)
 	db.Model(&movie).Association("Actors").Replace(actors)
 	db.Model(&movie).Association("Crews").Replace(crews)
-	db.Model(&movie).Association("Languages").Replace(languages)
 	db.Model(&movie).Association("Countries").Replace(countries)
 	db.Model(&movie).Association("Productions").Replace(productions)
 
@@ -179,7 +170,6 @@ func UpdateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	genres := []model.Genre{}
 	actors := []model.Person{}
 	crews := []model.Person{}
-	languages := []model.Country{}
 	countries := []model.Country{}
 	productions := []model.Production{}
 
@@ -201,12 +191,6 @@ func UpdateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 		crews = append(crews, crew)
 	}
 
-	for _, v := range movie.Languages {
-		language := model.Country{}
-		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&language)
-		languages = append(languages, language)
-	}
-
 	for _, v := range movie.Countries {
 		country := model.Country{}
 		db.Where(model.Country{Name: v.Name}).FirstOrCreate(&country)
@@ -222,7 +206,6 @@ func UpdateMovie(db *gorm.DB, w http.ResponseWriter, r *http.Request) {
 	db.Model(&movie).Association("Genres").Replace(genres)
 	db.Model(&movie).Association("Actors").Replace(actors)
 	db.Model(&movie).Association("Crews").Replace(crews)
-	db.Model(&movie).Association("Languages").Replace(languages)
 	db.Model(&movie).Association("Country").Replace(countries)
 	db.Model(&movie).Association("Productions").Replace(productions)
 	db.Model(&movie).Association("Videos").Replace(movie.Videos)
@@ -255,7 +238,6 @@ func getMovieOr404(db *gorm.DB, id int64, w http.ResponseWriter, r *http.Request
 		Preload("Banners").
 		Preload("Genres").
 		Preload("Posters").
-		Preload("Languages").
 		Preload("Countries").
 		Preload("Productions").
 		Preload("Actors").

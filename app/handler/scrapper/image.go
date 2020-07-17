@@ -1,4 +1,4 @@
-package handler
+package scrapper
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -18,91 +17,6 @@ import (
 type CommonImageResult struct {
 	Thumbnail string `json:"thumbnail"`
 	Image     string `json:"image"`
-}
-
-type TheMovieDBCredits struct {
-	Cast []TheMovieDBPerson `json:"cast"`
-	Crew []TheMovieDBPerson `json:"crew"`
-}
-
-type TheMovieDBPerson struct {
-	Name        string `json:"name"`
-	ProfilePath string `json:"-"`
-}
-
-type TheMovieDBGenre struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type TheMovieDBProduction struct {
-	ID            int    `json:"id"`
-	LogoPath      string `json:"logo_path"`
-	Name          string `json:"name"`
-	OriginCountry string `json:"origin_country"`
-}
-
-type TheMovieDBProductionCountry struct {
-	Iso3166_1 string `json:"iso_3166_1"`
-	Name      string `json:"name"`
-}
-
-type TheMovieDBLanguageCountry struct {
-	Iso639_1 string `json:"iso_639_1"`
-	Name     string `json:"name"`
-}
-
-type TheMovieDBVideos struct {
-	Results []TheMovieDBVideo `json:"results"`
-}
-
-type TheMovieDBVideo struct {
-	Key  string `json:"key"`
-	Site string `json:"site"`
-	Type string `json:"type"`
-}
-
-type OMDBAdditionalInfo struct {
-	Director   string `json:"Director"`
-	Awards     string `json:"Awards"`
-	ImdbRating string `json:"imdbRating"`
-	Rated      string `json:"Rated"`
-}
-
-type TheMovieDB struct {
-	BackdropPath        string                        `json:"backdrop_path"`
-	Genres              []TheMovieDBGenre             `json:"genres"`
-	ID                  int                           `json:"id"`
-	ImdbID              string                        `json:"imdb_id"`
-	OriginalLanguage    string                        `json:"original_language"`
-	Overview            string                        `json:"overview"`
-	PosterPath          string                        `json:"poster_path"`
-	ProductionCompanies []TheMovieDBProduction        `json:"production_companies"`
-	ProductionCountries []TheMovieDBProductionCountry `json:"production_countries"`
-	ReleaseDate         string                        `json:"release_date"`
-	Runtime             int                           `json:"runtime"`
-	SpokenLanguages     []TheMovieDBLanguageCountry   `json:"spoken_languages"`
-	Title               string                        `json:"title"`
-	Video               bool                          `json:"video"`
-	VoteAverage         float64                       `json:"vote_average"`
-	Director            string                        `json:"director"`
-	Awards              string                        `json:"awards"`
-	ImdbRating          float64                       `json:"imdb_rating"`
-	Rated               string                        `json:"rated"`
-	Actors              []TheMovieDBPerson            `json:"actors"`
-	Crews               []TheMovieDBPerson            `json:"crews"`
-	Videos              []TheMovieDBVideo             `json:"videos"`
-}
-
-type TMDBSearch struct {
-	Results []struct {
-		PosterPath  string  `json:"poster_path"`
-		ID          int     `json:"id"`
-		Title       string  `json:"title"`
-		VoteAverage float64 `json:"vote_average"`
-		Overview    string  `json:"overview"`
-		ReleaseDate string  `json:"release_date,omitempty"`
-	} `json:"results"`
 }
 
 type DuckDuckGoImageResult struct {
@@ -131,48 +45,6 @@ type TMDBMovieImage struct {
 		Height   int    `json:"height"`
 		Width    int    `json:"width"`
 	} `json:"posters"`
-}
-
-func GetMovieDetail(w http.ResponseWriter, r *http.Request) {
-	var theMovieDB TheMovieDB
-	var theMovieDBCredits TheMovieDBCredits
-	var theMovieDBVideos TheMovieDBVideos
-	var omdb OMDBAdditionalInfo
-
-	tmdbID := getHTTPRequestQuery(r, "tmdb")
-
-	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-	creditURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/credits?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-	videosURL := fmt.Sprintf("https://api.themoviedb.org/3/movie/%s/videos?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
-
-	body, _ := getHTTPRequestGetBody(apiURL)
-	err = json.Unmarshal(body, &theMovieDB)
-
-	body, _ = getHTTPRequestGetBody(creditURL)
-	err = json.Unmarshal(body, &theMovieDBCredits)
-
-	body, _ = getHTTPRequestGetBody(videosURL)
-	err = json.Unmarshal(body, &theMovieDBVideos)
-
-	omdbURL := fmt.Sprintf("http://www.omdbapi.com/?i=%s&apikey=%s", theMovieDB.ImdbID, os.Getenv("OMDB_KEY"))
-	body, _ = getHTTPRequestGetBody(omdbURL)
-	err = json.Unmarshal(body, &omdb)
-
-	s, _ := strconv.ParseFloat(omdb.ImdbRating, 64)
-
-	theMovieDB.Videos = theMovieDBVideos.Results
-	theMovieDB.Director = omdb.Director
-	theMovieDB.Awards = omdb.Awards
-	theMovieDB.Rated = omdb.Rated
-	theMovieDB.ImdbRating = s
-
-	if len(theMovieDBCredits.Cast) > 10 {
-		theMovieDB.Actors = theMovieDBCredits.Cast[0:10]
-	} else {
-		theMovieDB.Actors = theMovieDBCredits.Cast
-	}
-
-	respondJSON(w, http.StatusOK, nil, theMovieDB)
 }
 
 func GetMovieImage(w http.ResponseWriter, r *http.Request) {
@@ -209,15 +81,38 @@ func GetMovieImage(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, nil, commonImageResultArray)
 }
 
-func SearchMovie(w http.ResponseWriter, r *http.Request) {
-	var tmdbSearch TMDBSearch
+func GetTvImage(w http.ResponseWriter, r *http.Request) {
+	tmdbID := getHTTPRequestQuery(r, "tmdb")
+	imageType := getHTTPRequestQuery(r, "type")
 
-	query := getHTTPRequestQuery(r, "query")
+	apiURL := fmt.Sprintf("https://api.themoviedb.org/3/tv/%s/images?api_key=%s", tmdbID, os.Getenv("TMDB_KEY"))
 
-	url := fmt.Sprintf("https://api.themoviedb.org/3/search/movie?api_key=%s&query=%s", os.Getenv("TMDB_KEY"), url.PathEscape(query))
-	body, _ := getHTTPRequestGetBody(url)
-	err = json.Unmarshal(body, &tmdbSearch)
-	respondJSON(w, http.StatusOK, nil, tmdbSearch.Results)
+	body, _ := getHTTPRequestGetBody(apiURL)
+
+	var tmdbMovieImage TMDBMovieImage
+	err = json.Unmarshal(body, &tmdbMovieImage)
+
+	var commonImageResultArray []CommonImageResult
+
+	if imageType == "banners" {
+		for _, v := range tmdbMovieImage.Backdrops {
+			commonImageResult := CommonImageResult{
+				Thumbnail: fmt.Sprintf("https://image.tmdb.org/t/p/w500_and_h282_face%s", v.FilePath),
+				Image:     fmt.Sprintf("https://image.tmdb.org/t/p/original%s", v.FilePath),
+			}
+			commonImageResultArray = append(commonImageResultArray, commonImageResult)
+		}
+	} else if imageType == "posters" {
+		for _, v := range tmdbMovieImage.Posters {
+			commonImageResult := CommonImageResult{
+				Thumbnail: fmt.Sprintf("https://image.tmdb.org/t/p/w220_and_h330_face%s", v.FilePath),
+				Image:     fmt.Sprintf("https://image.tmdb.org/t/p/original%s", v.FilePath),
+			}
+			commonImageResultArray = append(commonImageResultArray, commonImageResult)
+		}
+	}
+
+	respondJSON(w, http.StatusOK, nil, commonImageResultArray)
 }
 
 func GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {

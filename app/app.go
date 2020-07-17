@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/condrowiyono/ruangtengah-api/app/handler"
+	"github.com/condrowiyono/ruangtengah-api/app/handler/scrapper"
 	"github.com/condrowiyono/ruangtengah-api/app/model"
 	"github.com/condrowiyono/ruangtengah-api/config"
 	"github.com/gorilla/mux"
@@ -21,10 +22,11 @@ type App struct {
 
 // Initialize with predefined configuration
 func (a *App) Initialize(config *config.Config) {
-	dbURI := fmt.Sprintf("%s:%s@(%s)/%s?charset=%s&parseTime=True",
+	dbURI := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=%s&parseTime=True",
 		config.DB.Username,
 		config.DB.Password,
 		config.DB.Host,
+		config.DB.Port,
 		config.DB.Name,
 		config.DB.Charset)
 
@@ -53,9 +55,15 @@ func (a *App) setRouters() {
 	a.GetWithAuth("/me", a.GetMyDetail)
 
 	// Partner 3rd party provider, thanks them
+	a.GetWithAuth("/partner/tmdb/search", a.GetSearchMovie)
 	a.GetWithAuth("/partner/tmdb/movie-detail", a.GetMovieDetail)
-	a.GetWithAuth("/partner/tmdb/movie-search", a.GetSearchMovie)
+
+	a.GetWithAuth("/partner/tmdb/tv-detail", a.GetTvDetail)
+	a.GetWithAuth("/partner/tmdb/tv-season", a.GetTvSeason)
+	a.GetWithAuth("/partner/tmdb/tv-episode", a.GetTvEpisode)
+
 	a.GetWithAuth("/partner/tmdb/movie-image", a.GetMovieImage)
+	a.GetWithAuth("/partner/tmdb/tv-image", a.GetTvImage)
 	a.GetWithAuth("/partner/duckduckgo/image-search", a.GetDuckDuckGoImage)
 	a.GetWithAuth("/partner/google/image-search", a.GetGoogleImage)
 
@@ -126,27 +134,44 @@ func (a *App) GetMyDetail(w http.ResponseWriter, r *http.Request) {
 
 // GetMovieDetail handler
 func (a *App) GetMovieDetail(w http.ResponseWriter, r *http.Request) {
-	handler.GetMovieDetail(w, r)
+	scrapper.GetMovieDetail(w, r)
 }
 
 // GetMovieImage handler
 func (a *App) GetMovieImage(w http.ResponseWriter, r *http.Request) {
-	handler.GetMovieImage(w, r)
+	scrapper.GetMovieImage(w, r)
 }
 
 // GetSearchMovie handler
 func (a *App) GetSearchMovie(w http.ResponseWriter, r *http.Request) {
-	handler.SearchMovie(w, r)
+	scrapper.SearchMovie(w, r)
 }
 
 // GetDuckDuckGoImage handler
 func (a *App) GetDuckDuckGoImage(w http.ResponseWriter, r *http.Request) {
-	handler.GetDuckDuckGoImage(w, r)
+	scrapper.GetDuckDuckGoImage(w, r)
 }
 
 // GetGoogleImage handler
 func (a *App) GetGoogleImage(w http.ResponseWriter, r *http.Request) {
-	handler.GetGoogleImage(w, r)
+	scrapper.GetGoogleImage(w, r)
+}
+
+// GetTvImage s
+func (a *App) GetTvImage(w http.ResponseWriter, r *http.Request) {
+	scrapper.GetTvImage(w, r)
+}
+
+func (a *App) GetTvDetail(w http.ResponseWriter, r *http.Request) {
+	scrapper.GetTvDetail(w, r)
+}
+
+func (a *App) GetTvSeason(w http.ResponseWriter, r *http.Request) {
+	scrapper.GetTvSeason(w, r)
+}
+
+func (a *App) GetTvEpisode(w http.ResponseWriter, r *http.Request) {
+	scrapper.GetTvEpisode(w, r)
 }
 
 // PERSON
